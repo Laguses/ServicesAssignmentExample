@@ -1,0 +1,196 @@
+//app.component.ts
+
+import {Component, OnInit} from '@angular/core';
+import {UsersOperationService} from './users-operation.service';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+})
+export class AppComponent implements OnInit {
+  totalActiveOperations: number;
+  totalInactiveOperations: number;
+
+  constructor(private accountsService: AccountsService, private usersOperationSerivce: UsersOperationService) {
+    this.usersOperationSerivce
+      .totalActiveOperationsEvent
+      .subscribe((count: number) => {
+        this.totalActiveOperations = count;
+      });
+    this.usersOperationSerivce
+      .totalInactiveOperationsEvent
+      .subscribe((count: number) => {
+        this.totalInactiveOperations = count;
+      });
+  }
+
+  ngOnInit(): void {
+ }
+
+
+}
+
+
+//app.component.html
+
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12 col-md-8 col-md-offset-2">
+      <app-active-users></app-active-users>
+      <app-inactive-users></app-inactive-users>
+      <div class="row">
+        <div class="col-xs-6">
+          <h1>Total Active Operation</h1>
+          <p>{{totalActiveOperations}}</p>
+        </div>
+        <div class="col-xs-6">
+          <h1>Total Inactive Operation</h1>
+          <p>{{ totalInactiveOperations }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+//inactive-users.component.html
+
+<div class="row">
+  <div class="col-xs-12">
+    <h1>Active Users</h1>
+    <ul class="list-group">
+      <li class="list-group-item"
+          *ngFor="let inactiveUser of inactiveUsers; let i = index">
+        <div class="row">
+          <h3>{{ inactiveUser }} | </h3>
+          <a href="#" (click)="setActive(i)"> Set Active</a>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+//
+inactive-users.component.ts
+
+import {Component, OnInit} from '@angular/core';
+import {UsersService} from '../users.service';
+
+@Component({
+  selector: 'app-inactive-users',
+  templateUrl: './inactive-users.component.html',
+  styleUrls: ['./inactive-users.component.css']
+})
+export class InactiveUsersComponent implements OnInit {
+  inactiveUsers: string[];
+  constructor(private users: UsersService) {
+  }
+
+  ngOnInit() {
+    this.inactiveUsers = this.users.inactiveUsers;
+  }
+
+  setActive(userIndex: number) {
+    this.users.setActive(userIndex);
+  }
+
+}
+
+//active-users.component.html
+
+<div class="row">
+  <div class="col-xs-12">
+    <h1>Active Users</h1>
+    <ul class="list-group">
+      <li class="list-group-item"
+      *ngFor="let activeUser of activeUsers; let i = index">
+        <div class="row">
+          <div class="col">
+            <h3>{{ activeUser }} | </h3>
+          </div>
+          <div class="col">
+            <a href="#" (click)="setInactive(i)"> Set inactive</a>
+
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+//active-users.component.ts
+
+import {Component, OnInit} from '@angular/core';
+import {UsersService} from '../users.service';
+
+@Component({
+  selector: 'app-active-users',
+  templateUrl: './active-users.component.html',
+  styleUrls: ['./active-users.component.css']
+})
+export class ActiveUsersComponent implements OnInit {
+  activeUsers: string[];
+
+  constructor(private users: UsersService) {
+  }
+
+  ngOnInit() {
+    this.activeUsers = this.users.activeUsers;
+  }
+
+  setInactive(userIndex: number) {
+    this.users.setInactive(userIndex);
+  }
+}
+
+//users.service.ts
+
+import {Injectable} from '@angular/core';
+import {UsersOperationService} from './users-operation.service';
+
+@Injectable()
+export class UsersService {
+  activeUsers: string[] = ['user1', 'user2', 'user3', 'user4'];
+  inactiveUsers: string[] = ['user5', 'user6', 'user7', 'user8'];
+
+  constructor(private usersOperationCount: UsersOperationService) {
+  }
+
+  setInactive(userIndex: number) {
+    const user = this.activeUsers[userIndex];
+    this.activeUsers.splice(userIndex, 1);
+    this.inactiveUsers.push(user);
+    //
+    this.usersOperationCount.countInactiveOperation();
+  }
+
+  setActive(userIndex: number) {
+    const user = this.inactiveUsers[userIndex];
+    this.inactiveUsers.splice(userIndex, 1);
+    this.activeUsers.push(user);
+    //
+    this.usersOperationCount.countActiveOperation();
+  }
+}
+
+
+//users-operation.service.ts
+import {EventEmitter} from '@angular/core';
+
+export class UsersOperationService {
+  totalActiveOperations = 0;
+  totalInactiveOperations = 0;
+  totalActiveOperationsEvent = new EventEmitter<Number>();
+  totalInactiveOperationsEvent = new EventEmitter<Number>();
+  countActiveOperation() {
+    this.totalActiveOperations++;
+    this.totalActiveOperationsEvent.emit(this.totalActiveOperations);
+  }
+
+  countInactiveOperation() {
+    this.totalInactiveOperations++;
+    this.totalInactiveOperationsEvent.emit(this.totalInactiveOperations);
+
+  }
+}
